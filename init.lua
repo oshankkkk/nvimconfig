@@ -38,6 +38,8 @@ vim.opt.rtp:prepend(lazypath)
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
  require("lazy").setup(
+
+--it goes like setup({plugins},{options})
 	 {
          {
              "navarasu/onedark.nvim",
@@ -60,6 +62,22 @@ vim.g.maplocalleader = "\\"
                  })
              end,
          },
+         --mason 
+         {
+             "mason-org/mason.nvim",
+             opts = {
+                 ui = {
+                     icons = {
+                         package_installed = "✓",
+                         package_pending = "➜",
+                         package_uninstalled = "✗"
+                     }
+                 }
+             },
+             config = function()
+                 require("mason").setup()
+            end,
+             },
  },
    -- Configure any other settings here. See the documentation for more details.
    -- colorscheme that will be used when installing plugins.
@@ -69,40 +87,7 @@ vim.g.maplocalleader = "\\"
     checker = { enabled = true },
     }
  )
- 
 
--- require("lazy").setup(
---   {
---     -- Plugin list (directly)
---     {
---       "navarasu/onedark.nvim",
---       priority = 1000,
---       config = function()
---         require("onedark").setup({ style = "darker" })
---         require("onedark").load()
---       end,
---     },
---     {
---       "nvim-treesitter/nvim-treesitter",
---       build = ":TSUpdate",
---       lazy = true,
---       event = "BufReadPost",
---       config = function()
---         require("nvim-treesitter.config").setup({
---           ensure_installed = { "c", "lua", "vim", "vimdoc", "query" },
---           auto_install = true,
---           highlight = { enable = true },
---         })
---       end,
---     },
---   },
--- 
---   {
---     -- Global Lazy.nvim options
---     install = { colorscheme = { "habamax" } },
---     checker = { enabled = true },
---   }
--- )
 -- keymaps
 vim.keymap.set("i", "jk", "<Esc>", { noremap = true, silent = true })
 
@@ -128,4 +113,5 @@ vim.keymap.set("n", "<leader>wq", ":wq<CR>")
 vim.keymap.set("n", "<leader>bn", ":bnext<CR>")
 vim.keymap.set("n", "<leader>bp", ":bprevious<CR>")
 vim.keymap.set("n", "<leader>bd", ":bdelete<CR>")
+
 
