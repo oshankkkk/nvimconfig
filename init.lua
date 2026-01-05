@@ -78,6 +78,10 @@ vim.g.maplocalleader = "\\"
                  require("mason").setup()
             end,
              },
+             {
+                 "neovim/nvim-lspconfig",
+vim.lsp.enable("pyright")
+         },
  },
    -- Configure any other settings here. See the documentation for more details.
    -- colorscheme that will be used when installing plugins.
