@@ -76,14 +76,13 @@ vim.g.maplocalleader = "\\"
              },
              config = function()
                  require("mason").setup()
-            end,
-             },
-             {
-                 "neovim/nvim-lspconfig",
-vim.lsp.enable("pyright")
+             end,
          },
- },
-   -- Configure any other settings here. See the documentation for more details.
+         {
+             "neovim/nvim-lspconfig",
+         },
+     },
+     -- Configure any other settings here. See the documentation for more details.
    -- colorscheme that will be used when installing plugins.
    { 
     install = { colorscheme = { "habamax" } },
@@ -118,4 +117,5 @@ vim.keymap.set("n", "<leader>bn", ":bnext<CR>")
 vim.keymap.set("n", "<leader>bp", ":bprevious<CR>")
 vim.keymap.set("n", "<leader>bd", ":bdelete<CR>")
 
-
+vim.lsp.enable("pyright")
+vim.lsp.enable("lua_ls")
