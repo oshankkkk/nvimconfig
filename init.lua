@@ -175,6 +175,7 @@ vim.lsp.enable("pyright")
 vim.lsp.enable("lua_ls")
 vim.lsp.enable("ts_ls")
 vim.lsp.enable("sqlls")
+vim.lsp.enable("gopls")
 
 -- LSP keybindings
 vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "LSP Hover" })
