@@ -33,39 +33,61 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 		os.exit(1)
 	end
 end
+
 vim.opt.rtp:prepend(lazypath)
 -- Make sure to setup `mapleader` and `maplocalleader` before
 -- loading lazy.nvim so that mappings are correct.
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
-require("lazy").setup(
-
-	{--it goes like setup({plugins},{options})
+require("lazy").setup({
+	--it goes like setup({plugins},{options})
 	{
-	"rose-pine/neovim",
-	name = "rose-pine",
-config = function()
-        vim.cmd("colorscheme rose-pine")
-    end,
-},
-{
-  'code-biscuits/nvim-biscuits',
-  dependencies = {
-    'nvim-treesitter/nvim-treesitter',
-  },
-  opts = {
-    -- Config goes here
-  }
-},
-		{
-			'MeanderingProgrammer/render-markdown.nvim',
-			dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' },            -- if you use the mini.nvim suite
-			-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.icons' },        -- if you use standalone mini plugins
-			-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
-			---@module 'render-markdown'
-			---@type render.md.UserConfig
-			opts = {},
+		"rose-pine/neovim",
+		name = "rose-pine",
+		config = function()
+			vim.cmd("colorscheme rose-pine")
+		end,
+	},
+	{
+		'MeanderingProgrammer/render-markdown.nvim',
+		dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' },            -- if you use the mini.nvim suite
+		-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.icons' },        -- if you use standalone mini plugins
+		-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
+		---@module 'render-markdown'
+		---@type render.md.UserConfig
+		opts = {},
+	},
+
+	{
+		'nvim-telescope/telescope.nvim', version = '*',
+		dependencies = {
+			'nvim-lua/plenary.nvim',
+			-- optional but recommended
+			{ 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
 		},
+		config = function()
+			local telescope = require("telescope")
+
+			telescope.setup({
+				defaults = {
+					path_display = { "smart" },
+				},
+				pickers = {
+					find_files = {
+						hidden = true,
+					},
+				},
+			})
+
+			local builtin = require("telescope.builtin")
+
+			vim.keymap.set("n", "<leader>ff", builtin.find_files, {})
+			vim.keymap.set("n", "<leader>fg", builtin.live_grep, {})
+			vim.keymap.set("n", "<leader>fb", builtin.buffers, {})
+			vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
+		end,
+	},
+
 		{
 			"nvim-treesitter/nvim-treesitter",
 			build = ":TSUpdate",
@@ -143,211 +165,6 @@ config = function()
 			"neovim/nvim-lspconfig",
 		},
 		{
-			"nvim-mini/mini.files",
-			opts = {
-				content = {
-					filter = nil,
-					highlight = nil,
-					prefix = nil,
-					sort = nil,
-				},
-
-				mappings = {
-					close       = "q",
-					go_in       = "<CR>",
-					go_in_plus  = "l",
-					go_out      = "-",
-					go_out_plus = "h",
-					reset       = "<BS>",
-					reveal_cwd  = "@",
-					show_help   = "g?",
-					synchronize = "=", -- still available, but you won't need it for these mappings
-					trim_left   = "<",
-					trim_right  = ">",
-				},
-
-				options = {
-					permanent_delete = true,
-					use_as_default_explorer = true,
-					lsp_timeout = 1000,
-				},
-
-				windows = {
-					max_number = math.huge,
-					preview = false,
-					width_focus = 50,
-					width_nofocus = 15,
-					width_preview = 25,
-				},
-			},
-
-			config = function(_, opts)
-				local MiniFiles = require("mini.files")
-
-				MiniFiles.setup(opts)
-
-				local function get_current_dir()
-					local ok, entry = pcall(MiniFiles.get_fs_entry)
-
-					if ok and entry ~= nil then
-						if entry.fs_type == "directory" then
-							return entry.path
-						end
-
-						return vim.fs.dirname(entry.path)
-					end
-
-					return vim.fn.getcwd()
-				end
-
-				local function refresh()
-					pcall(MiniFiles.refresh)
-				end
-
-				local function create_file()
-					local dir = get_current_dir()
-
-					vim.ui.input({
-						prompt = "New file: ",
-						completion = "file",
-					}, function(name)
-						if not name or name == "" then
-							return
-						end
-
-						local path = vim.fs.joinpath(dir, name)
-						local parent = vim.fs.dirname(path)
-
-						if parent and vim.fn.isdirectory(parent) == 0 then
-							vim.fn.mkdir(parent, "p")
-						end
-
-						local file, open_err = io.open(path, "a")
-
-						if not file then
-							vim.notify("Could not create file: " .. tostring(open_err), vim.log.levels.ERROR)
-							return
-						end
-
-						file:close()
-						refresh()
-					end)
-				end
-
-				local function create_directory()
-					local dir = get_current_dir()
-
-					vim.ui.input({
-						prompt = "New directory: ",
-						completion = "dir",
-					}, function(name)
-						if not name or name == "" then
-							return
-						end
-
-						local path = vim.fs.joinpath(dir, name)
-						local ok_mkdir = vim.fn.mkdir(path, "p")
-
-						if ok_mkdir == 0 then
-							vim.notify("Could not create directory: " .. path, vim.log.levels.ERROR)
-							return
-						end
-
-						refresh()
-					end)
-				end
-
-				local function delete_entry()
-					local ok, entry = pcall(MiniFiles.get_fs_entry)
-
-					if not ok or entry == nil then
-						return
-					end
-
-					local name = vim.fs.basename(entry.path)
-
-					vim.ui.input({
-						prompt = "Delete " .. name .. "? [y/n]: ",
-					}, function(answer)
-						answer = answer and answer:lower() or ""
-
-						if answer ~= "y" and answer ~= "yes" then
-							vim.notify("Delete cancelled", vim.log.levels.INFO)
-							return
-						end
-
-						local delete_ok
-
-						if entry.fs_type == "directory" then
-							delete_ok = vim.fn.delete(entry.path, "rf")
-						else
-							delete_ok = vim.fn.delete(entry.path)
-						end
-
-						if delete_ok ~= 0 then
-							vim.notify("Could not delete: " .. entry.path, vim.log.levels.ERROR)
-							return
-						end
-
-						refresh()
-					end)
-				end
-
-				local function rename_entry()
-					local ok, entry = pcall(MiniFiles.get_fs_entry)
-
-					if not ok or entry == nil then
-						return
-					end
-
-					vim.ui.input({
-						prompt = "Rename to: ",
-						default = vim.fs.basename(entry.path),
-					}, function(new_name)
-						if not new_name or new_name == "" then
-							return
-						end
-
-						local new_path = vim.fs.joinpath(vim.fs.dirname(entry.path), new_name)
-						local rename_ok = vim.fn.rename(entry.path, new_path)
-
-						if rename_ok ~= 0 then
-							vim.notify("Could not rename: " .. entry.path, vim.log.levels.ERROR)
-							return
-						end
-
-						refresh()
-					end)
-				end
-
-				vim.api.nvim_create_autocmd("User", {
-					pattern = "MiniFilesBufferCreate",
-					callback = function(args)
-						local buf_id = args.data.buf_id
-
-						vim.keymap.set("n", "%", create_file, {
-							buffer = buf_id,
-							desc = "Create file",
-						})
-
-						vim.keymap.set("n", "d", create_directory, {
-							buffer = buf_id,
-							desc = "Create directory",
-						})
-
-						vim.keymap.set("n", "D", delete_entry, {
-							buffer = buf_id,
-							desc = "Delete file or directory",
-						})
-
-						vim.keymap.set("n", "R", rename_entry, {
-							buffer = buf_id,
-							desc = "Rename file or directory",
-						})
-					end,
-				})
-			end,
-		},					{
 			"folke/lazydev.nvim",
 			ft = "lua", -- only load on lua files
 			opts = {
@@ -442,11 +259,9 @@ config = function()
 								},
 							},
 							opts_extend = { "sources.default" }
-						}
-
+						},
 						-- blink conifg end
-						
-					},
+						},
 					-- Configure any other settings here. See the documentation for more details.
 					-- colorscheme that will be used when installing plugins.
 					{ 
@@ -459,15 +274,7 @@ config = function()
 -- Keymaps
 vim.keymap.set("i", "jk", "<Esc>", { desc = "Exit insert mode" })
 
-vim.keymap.set("n", "<leader>e", function()
-	local ok_mini_files, mini_files = pcall(require, "mini.files")
-
-	if ok_mini_files then
-		mini_files.open()
-	else
-		vim.cmd.Ex()
-	end
-end, { desc = "Open file explorer" })
+vim.keymap.set("n", "<leader>e", vim.cmd.Ex, { desc = "Open file explorer" })
 
 vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
 vim.keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to lower window" })
