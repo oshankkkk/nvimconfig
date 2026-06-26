@@ -49,6 +49,42 @@ require("lazy").setup({
 		end,
 	},
 	{
+		'sindrets/diffview.nvim'
+	},
+	{
+		"mfussenegger/nvim-dap",
+		dependencies = {
+			"rcarriga/nvim-dap-ui",
+			"nvim-neotest/nvim-nio",
+		},
+		config = function()
+			local dap = require("dap")
+			local dapui = require("dapui")
+
+			dapui.setup()
+
+			dap.listeners.after.event_initialized["dapui_config"] = function()
+				dapui.open()
+			end
+
+			dap.listeners.before.event_terminated["dapui_config"] = function()
+				dapui.close()
+			end
+
+			dap.listeners.before.event_exited["dapui_config"] = function()
+				dapui.close()
+			end
+		end,
+	},
+	{
+		"leoluz/nvim-dap-go",
+		dependencies = { "mfussenegger/nvim-dap" },
+		config = function()
+			require("dap-go").setup()
+		end,
+	},
+
+	{
 		'MeanderingProgrammer/render-markdown.nvim',
 		dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' },            -- if you use the mini.nvim suite
 		-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.icons' },        -- if you use standalone mini plugins
@@ -88,30 +124,31 @@ require("lazy").setup({
 		end,
 	},
 
-		{
-			"nvim-treesitter/nvim-treesitter",
-			build = ":TSUpdate",
-			lazy = true,              -- don't load immediately
-			event = "BufReadPost",
-			config = function()
-				require("nvim-treesitter.config").setup({
-					ensure_installed = { "c", "lua", "vim", "vimdoc", "query" },
-					auto_install = true,
-					highlight = { enable = true },
-				})
-			end,
-		},
 
-		{
-			"folke/which-key.nvim",
-			event = "VeryLazy",
-			opts = {
-				-- your configuration comes here
-				-- or leave it empty to use the default settings
-				-- refer to the configuration section below
-			},
-			keys = {
-				{
+	{
+		"nvim-treesitter/nvim-treesitter",
+		build = ":TSUpdate",
+		lazy = true,              -- don't load immediately
+		event = "BufReadPost",
+		config = function()
+			require("nvim-treesitter.config").setup({
+				ensure_installed = { "c", "lua", "vim", "vimdoc", "query" },
+				auto_install = true,
+				highlight = { enable = true },
+			})
+		end,
+	},
+
+	{
+		"folke/which-key.nvim",
+		event = "VeryLazy",
+		opts = {
+			-- your configuration comes here
+			-- or leave it empty to use the default settings
+			-- refer to the configuration section below
+		},
+		keys = {
+			{
 					"<leader>?",
 					function()
 						require("which-key").show({ global = false })
@@ -273,9 +310,9 @@ require("lazy").setup({
 
 -- Keymaps
 vim.keymap.set("i", "jk", "<Esc>", { desc = "Exit insert mode" })
+vim.keymap.set('n', '<leader>e', '<cmd>Telescope find_files<cr>', { desc = 'Telescope Find Files' })
 
-vim.keymap.set("n", "<leader>e", vim.cmd.Ex, { desc = "Open file explorer" })
-
+vim.keymap.set("n", "<leader><S-e>", vim.cmd.Ex, { desc = "Open file explorer" })
 vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
 vim.keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to lower window" })
 vim.keymap.set("n", "<C-k>", "<C-w>k", { desc = "Move to upper window" })
@@ -317,6 +354,15 @@ vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnosti
 vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostic" })
 vim.keymap.set("n", "<leader>dl", vim.diagnostic.setloclist, { desc = "Diagnostics to location list" })
+
+-- Debugger keybindings
+local dap = require("dap")
+vim.keymap.set("n", "<leader>dc", dap.continue)
+vim.keymap.set("n", "<F10>", dap.step_over)
+vim.keymap.set("n", "<F11>", dap.step_into)
+vim.keymap.set("n", "<F12>", dap.step_out)
+vim.keymap.set("n", "<leader>db", dap.toggle_breakpoint)
+vim.keymap.set("n", "<leader>dr", dap.repl.open)
 
 -- Markdown line wrap
 vim.api.nvim_create_autocmd("FileType", {
