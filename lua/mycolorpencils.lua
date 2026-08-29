@@ -1,4 +1,7 @@
-vim.lsp.set_log_level("debug")
+-- vim.lsp.set_log_level("debug") -- left off: this writes a verbose log every session and slows startup.
+-- Uncomment temporarily (or run :lua vim.lsp.set_log_level("debug") ad-hoc) only when you're actively
+-- debugging an LSP issue, and check the log with :LspLog.
+
 -- Leader keys must be set before lazy.nvim loads.
 vim.g.mapleader = " "
 
@@ -48,6 +51,124 @@ require("lazy").setup({
 			vim.cmd("colorscheme rose-pine")
 		end,
 	},
+	{
+		"lervag/vimtex",
+		lazy = false, -- VimTeX recommends not lazy-loading
+		init = function()
+			vim.g.vimtex_view_method = "zathura" -- Linux
+		end,
+	},
+
+	{
+		"kawre/leetcode.nvim",
+		build = ":TSUpdate html", -- if you have `nvim-treesitter` installed
+		dependencies = {
+			-- include a picker of your choice, see picker section for more details
+			"nvim-lua/plenary.nvim",
+			"MunifTanjim/nui.nvim",
+		},
+		opts = {
+			-- configuration goes here
+			{
+				---@type string
+				arg = "leetcode.nvim",
+
+				---@type lc.lang
+				lang = "python",
+
+				cn = { -- leetcode.cn
+					enabled = false, ---@type boolean
+					translator = true, ---@type boolean
+					translate_problems = true, ---@type boolean
+				},
+
+				---@type lc.storage
+				storage = {
+					home = vim.fn.stdpath("data") .. "/leetcode",
+					cache = vim.fn.stdpath("cache") .. "/leetcode",
+				},
+
+				---@type table<string, boolean>
+				plugins = {
+					non_standalone = false,
+				},
+
+				---@type boolean
+				logging = true,
+
+				injector = {}, ---@type table<lc.lang, lc.inject>
+
+				cache = {
+					update_interval = 60 * 60 * 24 * 7, ---@type integer 7 days
+				},
+
+				editor = {
+					reset_previous_code = true, ---@type boolean
+					fold_imports = true, ---@type boolean
+				},
+
+				console = {
+					open_on_runcode = true, ---@type boolean
+
+					dir = "row", ---@type lc.direction
+
+					size = { ---@type lc.size
+						width = "90%",
+						height = "75%",
+					},
+
+					result = {
+						size = "60%", ---@type lc.size
+					},
+
+					testcase = {
+						virt_text = true, ---@type boolean
+
+						size = "40%", ---@type lc.size
+					},
+				},
+
+				description = {
+					position = "left", ---@type lc.position
+
+					width = "40%", ---@type lc.size
+
+					show_stats = true, ---@type boolean
+				},
+
+				---@type lc.picker
+				picker = { provider = nil },
+
+				hooks = {
+					---@type fun()[]
+					["enter"] = {},
+
+					---@type fun(question: lc.ui.Question)[]
+					["question_enter"] = {},
+
+					---@type fun()[]
+					["leave"] = {},
+				},
+
+				keys = {
+					toggle = { "q" }, ---@type string|string[]
+					confirm = { "<CR>" }, ---@type string|string[]
+
+					reset_testcases = "r", ---@type string
+					use_testcase = "U", ---@type string
+					focus_testcases = "H", ---@type string
+					focus_result = "L", ---@type string
+				},
+
+				---@type lc.highlights
+				theme = {},
+
+				---@type boolean
+				image_support = false,
+			}
+		},
+	},
+
 	{
 		'sindrets/diffview.nvim'
 	},
@@ -124,17 +245,26 @@ require("lazy").setup({
 		end,
 	},
 
-
+	-- NOTE: nvim-treesitter's `master` branch (the old ensure_installed/highlight.enable API)
+	-- is now frozen; all development happens on `main`, which is a full rewrite and requires
+	-- Neovim 0.12+. Parsers are installed explicitly and highlighting is enabled per-filetype
+	-- via an autocmd instead of a config flag. `auto_install` no longer exists on `main` --
+	-- add any new language to BOTH the install() list and the autocmd pattern below.
 	{
 		"nvim-treesitter/nvim-treesitter",
+		branch = "main",
+		lazy = false, -- the `main` branch does not support lazy-loading
 		build = ":TSUpdate",
-		lazy = true,              -- don't load immediately
-		event = "BufReadPost",
 		config = function()
-			require("nvim-treesitter.config").setup({
-				ensure_installed = { "c", "lua", "vim", "vimdoc", "query" },
-				auto_install = true,
-				highlight = { enable = true },
+			local languages = { "c", "lua", "vim", "vimdoc", "query" }
+
+			require("nvim-treesitter").install(languages)
+
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = languages,
+				callback = function()
+					vim.treesitter.start()
+				end,
 			})
 		end,
 	},
@@ -148,7 +278,7 @@ require("lazy").setup({
 			-- refer to the configuration section below
 		},
 		keys = {
-			{
+				{
 					"<leader>?",
 					function()
 						require("which-key").show({ global = false })
@@ -310,9 +440,10 @@ require("lazy").setup({
 
 -- Keymaps
 vim.keymap.set("i", "jk", "<Esc>", { desc = "Exit insert mode" })
-vim.keymap.set('n', '<leader>e', '<cmd>Telescope find_files<cr>', { desc = 'Telescope Find Files' })
+--vim.keymap.set('n', '<leader>e', '<cmd>Telescope find_files<cr>', { desc = 'Telescope Find Files' })
+vim.keymap.set('n', '<leader>t', '<cmd>Telescope find_files<cr>', { desc = 'Telescope Find Files' })
+vim.keymap.set("n", "<leader>e", vim.cmd.Ex, { desc = "Open file explorer" })
 
-vim.keymap.set("n", "<leader><S-e>", vim.cmd.Ex, { desc = "Open file explorer" })
 vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
 vim.keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to lower window" })
 vim.keymap.set("n", "<C-k>", "<C-w>k", { desc = "Move to upper window" })
@@ -371,4 +502,3 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.wrap = true
 	end,
 })
-
